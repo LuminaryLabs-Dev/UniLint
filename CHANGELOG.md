@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1 — Offline evidence boundary
+
+- Made Oracle Pack discovery dynamic instead of hard-coding supported version filenames in the loader.
+- Added enforced A/B/C/D Oracle provenance metadata and offline evidence flags.
+- Added repository validation that rejects outbound Oracle/reference-pack ingestion code and Unity process/API automation patterns.
+- Added a local-files-only `reference-pack` manifest command that never invokes Unity or the network.
+- Upgraded reference-pack manifests to schema 0.2 and require local provenance before U3 can run.
+- Documented the Unity access/compliance boundary and kept automated documentation crawling outside UniLint core.
+
 ## 0.1.0 — Version Oracle foundation
 
 - Added Unity project discovery and canonical project IR.

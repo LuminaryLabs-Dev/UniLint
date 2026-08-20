@@ -4,7 +4,43 @@ UniLint is a read-only static analysis and compatibility engine for Unity projec
 
 > **Can this project be structurally and compile-compatibly resolved for a target Unity version before that target Unity Editor ever opens it?**
 
-UniLint never controls Unity. It reads project files, reconstructs Unity-facing project structure, evaluates a target-version oracle, and can optionally invoke an offline Roslyn worker against a user-supplied target Unity reference pack.
+UniLint does not control Unity. It reads developer-supplied project files, reconstructs Unity-facing project structure, evaluates a provenance-backed target-version Oracle Pack, and can optionally invoke an offline Roslyn worker against a developer-supplied local reference pack.
+
+## Architecture boundary
+
+```text
+                     UNILINT
+                        │
+                        │ NO UNITY CONTROL
+                        │ NO UNITY API CALLS
+                        │ NO DOC CRAWLER
+                        │ NO UNITY BINARY REDISTRIBUTION
+                        │
+                        ▼
+                 PROJECT FILES
+                        │
+       ┌────────────────┼────────────────┐
+       ▼                ▼                ▼
+      C#             Packages          Assets
+       │                │                │
+       └────────────────┼────────────────┘
+                        ▼
+                 Canonical Project IR
+                        │
+                        ▼
+                  Oracle Registry
+                        │
+             ┌──────────┼──────────┐
+             ▼          ▼          ▼
+          curated    project     local
+           facts      facts     evidence
+             │          │          │
+             └──────────┼──────────┘
+                        ▼
+                Compatibility Proof
+```
+
+Automated crawling/ingestion of Unity Documentation, Unity APIs, the Asset Store, or Package Manager is intentionally outside UniLint core. Unity Editor/CLI automation is also outside the current boundary. See [`docs/compliance-boundary.md`](docs/compliance-boundary.md).
 
 ## v0.1 scope
 
@@ -27,8 +63,7 @@ Canonical Project IR
      ▼
 Target Environment
      │
-     ├─ Unity 6000.0 oracle
-     ├─ Unity 6000.3 oracle
+     ├─ dynamically loaded local Oracle Pack
      ├─ platform/backend defines
      ├─ asmdef defineConstraints
      └─ versionDefines
@@ -40,7 +75,7 @@ Assembly Plan
      ▼                                  ▼
 U2 VERSION RESOLVED              Roslyn Worker
                                       │
-                              target reference pack
+                              local reference pack
                                       │
                                       ▼
                                U3 COMPILE-PROVEN
@@ -79,7 +114,7 @@ node src/cli.mjs compat /path/to/UnityProject \
   --platform windows
 ```
 
-Evaluate the initial oracle matrix:
+Evaluate every locally installed Oracle Pack:
 
 ```bash
 node src/cli.mjs versions /path/to/UnityProject
@@ -97,13 +132,45 @@ Machine-readable output:
 node src/cli.mjs compat /path/to/UnityProject --unity 6000.3 --format json
 ```
 
+List loadable Oracle Packs:
+
+```bash
+node src/cli.mjs oracles
+```
+
+## Oracle provenance
+
+Oracle Packs are independently structured metadata, not replicated Unity documentation. Every pack carries one explicit provenance class:
+
+```text
+A — local-verified evidence
+B — human-curated factual metadata
+C — project/package metadata
+D — inference / heuristic
+```
+
+Committed packs must declare that automated ingestion, Unity process invocation, and network access were not used to generate the pack. The loader rejects a pack that does not satisfy that contract.
+
+Initial Unity `6000.0` and `6000.3` packs are **B-derived / human-curated** and intentionally incomplete at the API-surface level. A real local target reference pack is required for U3.
+
 ## U3 offline compilation
 
 U3 deliberately requires real target API evidence instead of a guessed API database.
 
 1. Install .NET 8+.
-2. Provide a directory containing reference assemblies for the target Unity environment that you are legally entitled to use locally.
-3. Run:
+2. Identify a local directory containing reference assemblies for the target Unity environment that you are entitled to use.
+3. Create the local manifest without invoking Unity:
+
+```bash
+node src/cli.mjs reference-pack /path/to/reference-assemblies \
+  --unity 6000.3 \
+  --framework mscorlib,netstandard \
+  --engine UnityEngine.CoreModule,UnityEngine.PhysicsModule,UnityEditor.CoreModule \
+  --auto Unity.InputSystem \
+  --complete
+```
+
+4. Run compatibility:
 
 ```bash
 node src/cli.mjs compat /path/to/UnityProject \
@@ -111,7 +178,11 @@ node src/cli.mjs compat /path/to/UnityProject \
   --reference-pack /path/to/reference-assemblies
 ```
 
-The Roslyn worker is pinned to `Microsoft.CodeAnalysis.CSharp` 5.6.0 and parses project source as C# 9, matching Unity 6's documented C# language level. It compiles assemblies in dependency order and refuses U3 when compilation is not actually performed or errors remain.
+The manifest helper only checks files already in the explicitly supplied directory and writes `unilint-reference-pack.json`. It does not launch Unity, call Unity APIs, query Package Manager, access Unity Documentation, download DLLs, or use the network.
+
+`--complete` is an explicit assertion by the developer that the pack models the target compilation environment. Without it, U3 is refused.
+
+The Roslyn worker is pinned to `Microsoft.CodeAnalysis.CSharp` 5.6.0 and parses project source as C# 9. It compiles assemblies in dependency order and refuses U3 when compilation is not actually performed or errors remain.
 
 UniLint does **not** redistribute Unity DLLs.
 
@@ -158,7 +229,7 @@ POST /v1/compatibility
 POST /v1/version-search
 ```
 
-It listens on `127.0.0.1:17450` by default.
+It listens on `127.0.0.1:17450` by default. The service analyzes supplied project paths; it is not a Unity Editor integration.
 
 ## Workers
 
@@ -170,8 +241,15 @@ workers/
 
 The Python worker currently extracts deterministic file-size facts, PNG dimensions, WAV metadata and basic PE/ELF/Mach-O identification. It is intentionally separate from the compatibility certificate until those asset facts have version-specific rules.
 
-## Oracle trust model
+## Validation philosophy
 
-Initial Unity 6000.0 and 6000.3 packs are marked **B-derived**: their compiler/package/assembly behavior is based on documented Unity contracts, but they do not claim a complete bundled Unity API surface. A real local target reference pack is required for U3.
+UniLint optimizes against **false-compatible** results:
 
-See `docs/compatibility-model.md` and `docs/validation.md`.
+- unknown evidence stays unknown;
+- U3 requires a successful Roslyn run;
+- arbitrary DLL directories are not accepted as reference packs;
+- Oracle Packs require explicit provenance;
+- Oracle/reference-pack code is statically guarded against outbound ingestion dependencies;
+- Unity process/API automation is outside the validated core contract.
+
+See `docs/compatibility-model.md`, `docs/oracle-packs.md`, `docs/reference-packs.md`, `docs/compliance-boundary.md`, and `docs/validation.md`.

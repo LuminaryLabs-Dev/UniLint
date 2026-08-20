@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { assertReferencePackProvenance } from '../policy/evidence-policy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -14,7 +15,12 @@ export function runRoslynCompatibility(ir, assemblyPlan, referencePack) {
   if (!fs.existsSync(manifestFile)) return { performed: false, success: null, reason: 'Reference pack is missing unilint-reference-pack.json; refusing to treat an unverified DLL directory as target proof.' };
   let manifest;
   try { manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8')); } catch { return { performed: false, success: null, reason: 'Reference pack manifest is invalid JSON.' }; }
-  if (manifest.schemaVersion !== '0.1' || manifest.complete !== true) return { performed: false, success: null, reason: 'Reference pack manifest must declare schemaVersion 0.1 and complete=true.' };
+  if (manifest.schemaVersion !== '0.2' || manifest.complete !== true) return { performed: false, success: null, reason: 'Reference pack manifest must declare schemaVersion 0.2 and complete=true.' };
+  try {
+    assertReferencePackProvenance(manifest);
+  } catch (error) {
+    return { performed: false, success: null, reason: error.message };
+  }
   if (manifest.unityLine !== assemblyPlan.target.unityLine) return { performed: false, success: null, reason: `Reference pack targets Unity ${manifest.unityLine ?? 'unknown'}, not ${assemblyPlan.target.unityLine}.` };
   const frameworkAssemblies = manifest.assemblies?.framework;
   const engineAssemblies = manifest.assemblies?.engine;

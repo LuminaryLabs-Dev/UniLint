@@ -53,9 +53,33 @@ test('U3 reference packs require explicit target framework classification', asyn
   const os = await import('node:os');
   const { runRoslynCompatibility } = await import('../src/compat/roslyn.mjs');
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'unilint-refpack-test-'));
-  fs.writeFileSync(path.join(temp, 'unilint-reference-pack.json'), JSON.stringify({ schemaVersion: '0.1', unityLine: '6000.3', complete: true }));
+  fs.writeFileSync(path.join(temp, 'unilint-reference-pack.json'), JSON.stringify({
+    schemaVersion: '0.2',
+    unityLine: '6000.3',
+    complete: true,
+    generatedLocally: true,
+    provenance: { sourceMode: 'local-installed-files', unityProcessInvoked: false, networkAccess: false },
+  }));
   fs.writeFileSync(path.join(temp, 'placeholder.dll'), 'not actually reached');
   const result = runRoslynCompatibility({ projectRoot: good }, { target: { unityLine: '6000.3' }, assemblies: [] }, temp);
   assert.equal(result.performed, false);
   assert.match(result.reason, /assemblies\.framework/);
+});
+
+test('U3 rejects legacy reference packs without local provenance', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const { runRoslynCompatibility } = await import('../src/compat/roslyn.mjs');
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'unilint-refpack-legacy-'));
+  fs.writeFileSync(path.join(temp, 'unilint-reference-pack.json'), JSON.stringify({
+    schemaVersion: '0.1',
+    unityLine: '6000.3',
+    complete: true,
+    assemblies: { framework: ['mscorlib'], engine: ['UnityEngine.CoreModule'], autoReferenced: [] },
+  }));
+  fs.writeFileSync(path.join(temp, 'mscorlib.dll'), 'fixture');
+  fs.writeFileSync(path.join(temp, 'UnityEngine.CoreModule.dll'), 'fixture');
+  const result = runRoslynCompatibility({ projectRoot: good }, { target: { unityLine: '6000.3' }, assemblies: [] }, temp);
+  assert.equal(result.performed, false);
+  assert.match(result.reason, /schemaVersion 0\.2/);
 });

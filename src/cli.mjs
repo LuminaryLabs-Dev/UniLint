@@ -7,9 +7,10 @@ import { runAudit } from './rules/audit.mjs';
 import { compatibilityText, auditText } from './report/text.mjs';
 import { listOracleVersions } from './oracle/oracle.mjs';
 import { searchVersions } from './compat/version-search.mjs';
+import { writeReferencePackManifest } from './reference-pack/manifest.mjs';
 
 function usage(exitCode = 0) {
-  const text = `UniLint 0.1 — offline Unity compatibility auditor\n\nUsage:\n  unilint index <project> [--format json]\n  unilint compat <project> --unity <version> [--platform windows|android|ios|webgl|linux|macos] [--backend mono|il2cpp] [--reference-pack <dir>] [--format text|json]\n  unilint versions <project> [--format text|json]\n  unilint audit <project> [--format text|json]\n  unilint oracles\n`;
+  const text = `UniLint 0.1 — offline Unity compatibility auditor\n\nUsage:\n  unilint index <project> [--format json]\n  unilint compat <project> --unity <version> [--platform windows|android|ios|webgl|linux|macos] [--backend mono|il2cpp] [--reference-pack <dir>] [--format text|json]\n  unilint versions <project> [--format text|json]\n  unilint audit <project> [--format text|json]\n  unilint oracles\n  unilint reference-pack <dir> --unity <version-line> --framework <assembly,...> --engine <assembly,...> [--auto <assembly,...>] [--complete]\n`;
   (exitCode ? process.stderr : process.stdout).write(text);
   process.exit(exitCode);
 }
@@ -33,6 +34,11 @@ function write(value, format, textFormatter = null) {
   else process.stdout.write(`${textFormatter(value)}\n`);
 }
 
+function csv(value) {
+  if (!value || value === true) return [];
+  return String(value).split(',').map((item) => item.trim()).filter(Boolean);
+}
+
 const { command, projectArg, options } = parseArgs(process.argv.slice(2));
 if (!command || command === 'help' || command === '--help' || command === '-h') usage(0);
 
@@ -49,6 +55,19 @@ if (!fs.existsSync(project)) {
 }
 
 try {
+  if (command === 'reference-pack') {
+    if (!options.unity) throw new Error('--unity is required for reference-pack.');
+    const result = writeReferencePackManifest(project, {
+      unityLine: options.unity,
+      framework: csv(options.framework),
+      engine: csv(options.engine),
+      autoReferenced: csv(options.auto),
+      complete: options.complete === true,
+    });
+    write(result, options.format ?? 'json');
+    process.exit(0);
+  }
+
   const ir = indexUnityProject(project);
   const format = options.format ?? (command === 'index' ? 'json' : 'text');
   if (command === 'index') {

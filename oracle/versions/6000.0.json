@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "0.1",
+  "schemaVersion": "0.2",
   "unity": "6000.0",
   "family": "Unity 6",
   "trust": "B-derived",
@@ -15,10 +15,18 @@
     "serialization": "structural-only",
     "platforms": ["windows", "macos", "linux", "android", "ios", "webgl"]
   },
-  "provenance": [
-    "Unity 6.0 C# compiler manual: Roslyn / C# 9.0",
-    "Unity 6.0 Assembly Definition file format reference",
-    "Unity 6.0 Package manifest reference",
-    "Unity 6.0 text serialization format reference"
-  ]
+  "provenance": {
+    "level": "B",
+    "label": "human-curated",
+    "sourceMode": "human-curated-facts",
+    "automatedIngestion": false,
+    "unityProcessInvoked": false,
+    "networkRequired": false,
+    "sources": [
+      "Human-reviewed Unity 6.0 C# compiler documentation",
+      "Human-reviewed Unity 6.0 Assembly Definition documentation",
+      "Human-reviewed Unity package manifest documentation",
+      "Human-reviewed Unity text serialization documentation"
+    ]
+  }
 }
