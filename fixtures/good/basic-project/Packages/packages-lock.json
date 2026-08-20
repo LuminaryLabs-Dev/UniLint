@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "com.luminarylabs.fixture": {
+      "version": "file:../LocalPackage",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    }
+  }
+}

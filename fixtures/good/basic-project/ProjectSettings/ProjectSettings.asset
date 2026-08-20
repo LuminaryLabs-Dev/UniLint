@@ -1,0 +1,5 @@
+PlayerSettings:
+  companyName: Luminary Labs
+  scriptingDefineSymbols:
+    Standalone: FIXTURE_STANDALONE
+    Android: FIXTURE_ANDROID

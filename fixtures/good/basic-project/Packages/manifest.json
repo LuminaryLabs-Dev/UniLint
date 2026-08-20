@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "com.luminarylabs.fixture": "file:../LocalPackage"
+  }
+}

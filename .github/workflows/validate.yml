@@ -1,0 +1,35 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  node-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm ci
+      - run: npm test
+      - run: npm run validate
+      - run: python -m py_compile workers/python/unilint_worker.py
+      - run: node src/cli.mjs compat fixtures/good/basic-project --unity 6000.3 --format json > /tmp/unilint-good.json
+      - run: node src/cli.mjs compat fixtures/broken/broken-project --unity 6000.3 --format json > /tmp/unilint-broken.json || test $? -eq 1
+
+  roslyn-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet restore workers/roslyn/UniLint.Roslyn.csproj
+      - run: dotnet build workers/roslyn/UniLint.Roslyn.csproj --configuration Release --no-restore

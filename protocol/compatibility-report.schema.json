@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UniLint Compatibility Report v0.1",
+  "type": "object",
+  "required": ["schemaVersion", "project", "target", "compatibility", "findings"],
+  "properties": {
+    "schemaVersion": {"const": "0.1"},
+    "project": {"type": "object"},
+    "target": {"type": "object"},
+    "oracle": {"type": ["object", "null"]},
+    "compatibility": {
+      "type": "object",
+      "required": ["level", "predicted", "blocking", "warnings", "unknowns", "runtimeVerified"],
+      "properties": {
+        "level": {
+          "type": "object",
+          "required": ["code", "label"],
+          "properties": {
+            "code": {"enum": ["U0", "U1", "U2", "U3"]},
+            "label": {"type": "string"}
+          }
+        },
+        "predicted": {"enum": ["pass", "pass-with-unknowns", "blocked"]},
+        "blocking": {"type": "integer", "minimum": 0},
+        "warnings": {"type": "integer", "minimum": 0},
+        "unknowns": {"type": "integer", "minimum": 0},
+        "runtimeVerified": {"const": false}
+      }
+    },
+    "findings": {"type": "array"}
+  }
+}

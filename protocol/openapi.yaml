@@ -1,0 +1,73 @@
+openapi: 3.1.0
+info:
+  title: UniLint Local Service
+  version: 0.1.0
+  description: Read-only loopback API over the same offline Unity indexing and compatibility engine used by the CLI.
+servers:
+  - url: http://127.0.0.1:17450
+paths:
+  /health:
+    get:
+      responses:
+        '200':
+          description: Service health
+  /v1/oracles:
+    get:
+      responses:
+        '200':
+          description: Installed oracle versions
+  /v1/index:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProjectRequest'}
+      responses:
+        '200': {description: Canonical project IR}
+  /v1/audit:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProjectRequest'}
+      responses:
+        '200': {description: Audit report}
+  /v1/compatibility:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CompatibilityRequest'}
+      responses:
+        '200': {description: Compatibility proof report}
+  /v1/version-search:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProjectRequest'}
+      responses:
+        '200': {description: Oracle matrix and recommendation}
+components:
+  schemas:
+    ProjectRequest:
+      type: object
+      required: [project]
+      properties:
+        project: {type: string}
+        platform: {type: string}
+        backend: {type: string}
+        architecture: {type: string}
+        graphics: {type: string}
+        referencePack: {type: string}
+    CompatibilityRequest:
+      allOf:
+        - {$ref: '#/components/schemas/ProjectRequest'}
+        - type: object
+          required: [unity]
+          properties:
+            unity: {type: string}

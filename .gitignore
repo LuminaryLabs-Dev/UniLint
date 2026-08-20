@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+.vscode/
+.idea/
+.tmp/
+*.log
+workers/roslyn/bin/
+workers/roslyn/obj/
+__pycache__/
+*.pyc

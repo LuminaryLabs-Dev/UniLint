@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "0.1",
+  "unity": "6000.3",
+  "family": "Unity 6",
+  "trust": "B-derived",
+  "compiler": {
+    "engine": "Roslyn",
+    "languageVersion": "C# 9.0",
+    "workerPackage": "Microsoft.CodeAnalysis.CSharp 5.6.0"
+  },
+  "coverage": {
+    "defines": "initial",
+    "packageCompatibility": "project-manifest-only",
+    "apiSurface": "requires local reference pack for U3",
+    "serialization": "structural-only",
+    "platforms": ["windows", "macos", "linux", "android", "ios", "webgl"]
+  },
+  "provenance": [
+    "Unity 6 documentation family and Unity 6.3 target line",
+    "Unity Assembly Definition file format reference",
+    "Unity Package manifest reference",
+    "Unity text serialization format reference"
+  ]
+}

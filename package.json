@@ -1,0 +1,20 @@
+{
+  "name": "@luminarylabs/unilint",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline Unity project compatibility and auditing engine.",
+  "type": "module",
+  "bin": {
+    "unilint": "./src/cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "validate": "node scripts/validate-repo.mjs",
+    "check": "npm test && npm run validate",
+    "fixture:good": "node src/cli.mjs compat fixtures/good/basic-project --unity 6000.3 --format json",
+    "fixture:broken": "node src/cli.mjs compat fixtures/broken/broken-project --unity 6000.3 --format json"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

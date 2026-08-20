@@ -1,0 +1,15 @@
+{
+  "name": "Fixture.Gameplay",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "defineConstraints": [],
+  "versionDefines": [
+    {
+      "name": "Unity",
+      "expression": "[6000.0,)",
+      "define": "FIXTURE_UNITY_6"
+    }
+  ],
+  "noEngineReferences": false
+}
