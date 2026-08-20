@@ -8,6 +8,8 @@
 - Added a local-files-only `reference-pack` manifest command that never invokes Unity or the network.
 - Upgraded reference-pack manifests to schema 0.2 and require local provenance before U3 can run.
 - Documented the Unity access/compliance boundary and kept automated documentation crawling outside UniLint core.
+- Added the MIT license grant and package license metadata.
+- Added contributor licensing guidance and third-party dependency notices for public open-source distribution.
 
 ## 0.1.0 — Version Oracle foundation
 

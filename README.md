@@ -253,3 +253,19 @@ UniLint optimizes against **false-compatible** results:
 - Unity process/API automation is outside the validated core contract.
 
 See `docs/compatibility-model.md`, `docs/oracle-packs.md`, `docs/reference-packs.md`, `docs/compliance-boundary.md`, and `docs/validation.md`.
+
+## Contributing
+
+Contributions are welcome under the MIT License. By submitting a contribution, you represent that you have the right to submit it and agree that it may be distributed under the MIT License. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## License
+
+UniLint is distributed under the [MIT License](LICENSE).
+
+Copyright in individual contributions remains with the applicable authors. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for third-party dependency information.
+
+## Unity
+
+UniLint is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Unity Technologies.
+
+Unity and related marks belong to their respective trademark owners. UniLint does not distribute Unity binaries, Unity source code, copied Unity documentation, or Unity artwork. Developer-supplied local reference packs are not part of this repository or the UniLint MIT license grant.

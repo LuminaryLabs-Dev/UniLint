@@ -2,6 +2,7 @@
   "name": "@luminarylabs/unilint",
   "version": "0.1.1",
   "private": true,
+  "license": "MIT",
   "description": "Offline Unity project compatibility and auditing engine.",
   "type": "module",
   "bin": {
