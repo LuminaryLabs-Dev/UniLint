@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3 — Direct scene review navigation
+
+- Surface known scene links in the overview and destination buttons at the start of each scene review, preserving candidate/runtime labels and unselected-scene boundaries.
+
 ## 0.2.2 — Follow scoped scene destinations
 
 - Preserve the selected scene's literal destination links in scoped queries and browser navigation, and open a destination scene when its node is selected. Unrelated build-list links remain outside the selected scene scope.
