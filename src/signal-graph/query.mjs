@@ -3,20 +3,23 @@ export function queryGraph(graph,options={}) {
   if(!Number.isInteger(limit)||limit<1||limit>200||!Number.isInteger(offset)||offset<0||!Number.isInteger(depth)||depth<1||depth>5) throw new Error('Query limits: limit 1..200, offset >=0, depth 1..5.');
   const scene=options.scene?graph.scenes.find(s=>[s.guid,s.path].includes(options.scene)):null;
   if(options.scene&&!scene) throw new Error('Scene is not in this graph scope.');
-  const scope=scene?new Set(scene.files):null;const view=options.view??'findings';
+  const scope=scene?new Set(scene.files):null;
+  const loadTargets=new Set(scene?graph.edges.filter(e=>scene.outgoing.includes(e.id)).map(e=>e.to):[]);
+  const inScope=e=>!scope||scope.has(e.evidence.file)||(e.kind==='names-scene'&&loadTargets.has(e.from));
+  const view=options.view??'findings';
   let results;
   if(options.node) {
     if(!graph.nodes.some(n=>n.id===options.node)) throw new Error('Unknown node ID.');
     const direction=options.direction??'outgoing';if(!['incoming','outgoing'].includes(direction)) throw new Error('Direction must be incoming or outgoing.');
     const visited=new Set([options.node]),edges=new Map();let frontier=new Set([options.node]);
     for(let i=0;i<depth;i++) {const next=new Set();for(const e of graph.edges) {
-      if(scope&&!scope.has(e.evidence.file)) continue;
+      if(!inScope(e)) continue;
       if(frontier.has(direction==='incoming'?e.to:e.from)) {edges.set(e.id,e);const id=direction==='incoming'?e.from:e.to;if(!visited.has(id)){visited.add(id);next.add(id);}}
     }frontier=next;}
     results=[...edges.values()];
   } else if(view==='findings') results=graph.findings.filter(f=>!scene||scene.findingIds.includes(f.id)||scene.globalFindingIds.includes(f.id));
   else if(view==='nodes') results=graph.nodes.filter(n=>!scope||scope.has(n.file));
-  else if(view==='edges') results=graph.edges.filter(e=>!scope||scope.has(e.evidence.file));
+  else if(view==='edges') results=graph.edges.filter(inScope);
   else if(view==='scenes') results=scene?[scene]:graph.scenes;
   else if(view==='files') results=graph.files.filter(f=>!scope||scope.has(f.path));
   else throw new Error('Unknown query view.');

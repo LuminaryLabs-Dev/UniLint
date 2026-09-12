@@ -125,3 +125,10 @@ test('orphan Timeline keys remain provenance when no playable asset is assigned'
   const {root,put}=sceneFixture(t);put('Assets/B.unity','--- !u!320 &1\nPlayableDirector:\n  m_PlayableAsset: {fileID: 0}\n  m_SceneBindings:\n  - key: {fileID: 999}\n    value: {fileID: 0}\n');
   const g=buildSignalGraph(root),f=g.findings.find(f=>f.evidence.file==='Assets/B.unity'&&f.target?.endsWith('#999'));assert.equal(f.category,'provenance');assert.equal(f.severity,'info');
 });
+
+test('scoped neighborhoods retain their literal build-list destination without unrelated scene links',t=>{
+  const {root}=sceneFixture(t);const g=buildSignalGraph(root);
+  const q=queryGraph(g,{scene:'a'.repeat(32),node:'scene-target:B',direction:'outgoing',limit:10});
+  assert.ok(q.results.some(e=>e.kind==='names-scene'&&e.to==='asset:Assets/B.unity'));
+  const other=queryGraph(g,{scene:'b'.repeat(32),view:'edges',kind:'names-scene'});assert.equal(other.total,0);
+});

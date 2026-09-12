@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 — Follow scoped scene destinations
+
+- Preserve the selected scene's literal destination links in scoped queries and browser navigation, and open a destination scene when its node is selected. Unrelated build-list links remain outside the selected scene scope.
+
 ## 0.2.1 — Timeline binding provenance
 
 - Classify missing Timeline binding keys as provenance when the saved PlayableDirector has no assigned playable asset. The serialized absence remains visible without implying an active broken Timeline.
