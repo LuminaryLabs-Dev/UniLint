@@ -6,6 +6,8 @@ import { loadAsmdefs } from '../unity/asmdef.mjs';
 import { readMetaGuid } from '../unity/meta.mjs';
 import { parseUnityYaml } from '../unity/yaml.mjs';
 import { parseUnityVersion } from '../unity/version.mjs';
+import { resolvePackageRoots } from '../unity/packages.mjs';
+import { isBuiltinGuid } from '../unity/meta.mjs';
 import { parseScriptingDefines } from '../unity/settings.mjs';
 
 const SERIALIZED_EXTENSIONS = new Set(['.unity', '.prefab', '.asset', '.mat', '.controller', '.anim', '.overridecontroller', '.playable']);
@@ -52,27 +54,15 @@ function inferPipeline(packages) {
 
 function collectAssetEntries(projectRoot) {
   const assetsRoot = path.join(projectRoot, 'Assets');
-  return walk(assetsRoot).filter((entry) => !entry.path.endsWith('.meta'));
+  return walk(assetsRoot, { unityVisible: true }).filter((entry) => !entry.path.endsWith('.meta'));
 }
 
 function collectSourceEntries(projectRoot, packageData) {
-  const roots = [path.join(projectRoot, 'Assets')];
-  const packagesRoot = path.join(projectRoot, 'Packages');
-  if (exists(packagesRoot)) {
-    for (const entry of fs.readdirSync(packagesRoot, { withFileTypes: true })) {
-      if (entry.isDirectory()) roots.push(path.join(packagesRoot, entry.name));
-    }
-  }
-  for (const pkg of packageData.packages) {
-    const requested = String(pkg.requested ?? '');
-    if (!requested.startsWith('file:')) continue;
-    const candidate = path.resolve(projectRoot, 'Packages', requested.slice(5));
-    if (exists(candidate)) roots.push(candidate);
-  }
+  const roots = [path.join(projectRoot, 'Assets'), ...packageData.resolvedRoots];
   const seen = new Set();
   const entries = [];
   for (const root of roots) {
-    for (const entry of walk(root)) {
+    for (const entry of walk(root, { unityVisible: true })) {
       if (entry.type !== 'file' || entry.path.endsWith('.meta')) continue;
       const absolute = path.resolve(entry.path);
       if (seen.has(absolute)) continue;
@@ -154,9 +144,16 @@ export function indexUnityProject(projectPath) {
     }));
   }
 
+  const packageResolution = resolvePackageRoots(projectRoot, packageData);
+  packageData.resolvedRoots = packageResolution.roots;
+  for (const item of packageResolution.resolutions.filter(x => ['invalid', 'unavailable'].includes(x.status))) findings.push(diagnostic({
+    rule: 'unilint/packages/source-unavailable', severity: Severity.warning, certainty: Certainty.certain, category: 'coverage',
+    file: item.path, message: `Package source unavailable: ${item.name} (${item.resolvedVersion ?? item.requested}).`, evidence: [item], blocking: false,
+  }));
+
   const assetEntries = exists(path.join(projectRoot, 'Assets')) ? collectAssetEntries(projectRoot) : [];
-  const files = assetEntries.filter((entry) => entry.type === 'file');
   const sourceFiles = collectSourceEntries(projectRoot, packageData);
+  const files = sourceFiles;
   const directories = assetEntries.filter((entry) => entry.type === 'directory');
   const allAssetPaths = [...files, ...directories].map((entry) => relative(projectRoot, entry.path));
 
@@ -165,6 +162,7 @@ export function indexUnityProject(projectPath) {
   for (const assetPath of allAssetPaths) {
     const metaFile = path.join(projectRoot, `${assetPath}.meta`);
     if (!exists(metaFile)) {
+      if (!assetPath.startsWith('Assets/')) continue;
       findings.push(diagnostic({
         rule: 'unity/meta/missing',
         severity: Severity.warning,
@@ -194,7 +192,7 @@ export function indexUnityProject(projectPath) {
 
 
   if (exists(path.join(projectRoot, 'Assets'))) {
-    for (const entry of walk(path.join(projectRoot, 'Assets')).filter((item) => item.type === 'file' && item.path.endsWith('.meta'))) {
+    for (const entry of walk(path.join(projectRoot, 'Assets'), { unityVisible: true }).filter((item) => item.type === 'file' && item.path.endsWith('.meta'))) {
       const assetPath = entry.path.slice(0, -5);
       if (!exists(assetPath)) {
         findings.push(diagnostic({
@@ -228,6 +226,7 @@ export function indexUnityProject(projectPath) {
   let assemblies = { definitions: [], references: [] };
   try {
     assemblies = loadAsmdefs(projectRoot, asmdefFiles, asmrefFiles);
+    for (const error of assemblies.errors) findings.push(diagnostic({ rule: 'unity/assemblies/invalid-definition', severity: Severity.error, certainty: Certainty.certain, category: 'assemblies', file: error.file, message: error.message }));
   } catch (error) {
     findings.push(diagnostic({
       rule: 'unity/assemblies/invalid-definition',
@@ -244,6 +243,7 @@ export function indexUnityProject(projectPath) {
       path: rel,
       assembly: nearestOwningAssembly(rel, assemblies.definitions, assemblies.references),
       bytes: fs.statSync(entry.path).size,
+      assemblyResolution: assemblies.complete === false ? 'partial' : 'source-indexed',
     };
   });
 
@@ -266,18 +266,18 @@ export function indexUnityProject(projectPath) {
   }
 
   for (const reference of guidReferences) {
-    if (reference.guid === '00000000000000000000000000000000') continue;
+    if (isBuiltinGuid(reference.guid) || reference.guid === '00000000000000000000000000000000') continue;
     if (!guidToPaths.has(reference.guid)) {
       findings.push(diagnostic({
         rule: 'unity/references/unresolved-guid',
         severity: Severity.warning,
         certainty: Certainty.medium,
         category: 'integrity',
-        message: `Serialized Unity asset references GUID ${reference.guid}, which was not found under Assets/.`,
+        message: `Serialized Unity asset references GUID ${reference.guid}, which was not found in resolved project/package metadata.`,
         file: reference.source,
         evidence: [{ kind: 'guid', value: reference.guid }],
         blocking: false,
-        recommendation: 'Verify whether the reference belongs to a package/built-in resource or is genuinely missing. Package and built-in references remain a known ambiguity in v0.1.',
+        recommendation: 'Verify whether the reference belongs to a package/built-in resource or is genuinely missing. Unavailable package sources and imported/binary targets remain explicit coverage limits.',
       }));
     }
   }
@@ -308,6 +308,7 @@ export function indexUnityProject(projectPath) {
     packages: packageData.packages,
     packageManifest: packageData.manifest,
     packageLock: packageData.lock,
+    packageResolution: packageResolution.resolutions,
     assemblies,
     scripts,
     assets: files.map((entry) => ({ path: relative(projectRoot, entry.path), bytes: fs.statSync(entry.path).size })),

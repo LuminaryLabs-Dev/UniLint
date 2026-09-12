@@ -33,7 +33,7 @@ for (const file of required) {
 }
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-if (pkg.version !== '0.1.1') throw new Error('package.json version must be 0.1.1');
+if (pkg.version !== '0.2.0') throw new Error('package.json version must be 0.2.0');
 if (!pkg.bin?.unilint) throw new Error('package.json must expose unilint CLI');
 
 const oracleFiles = fs.readdirSync(path.join(root, 'oracle', 'versions')).filter((name) => name.endsWith('.json'));

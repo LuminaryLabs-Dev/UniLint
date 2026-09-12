@@ -7,29 +7,32 @@ import { satisfiesVersionExpression } from './semver.mjs';
 export function loadAsmdefs(projectRoot, asmdefFiles, asmrefFiles) {
   const definitions = [];
   const guidToName = new Map();
+  const errors = [];
 
-  for (const file of asmdefFiles) {
-    const json = readJson(file);
-    if (!json.name || typeof json.name !== 'string') throw new Error(`Invalid asmdef without name: ${relative(projectRoot, file)}`);
-    const guid = readMetaGuid(`${file}.meta`);
-    const item = {
-      path: relative(projectRoot, file),
-      directory: relative(projectRoot, path.dirname(file)),
-      guid,
-      name: json.name,
-      references: Array.isArray(json.references) ? json.references : [],
-      includePlatforms: Array.isArray(json.includePlatforms) ? json.includePlatforms : [],
-      excludePlatforms: Array.isArray(json.excludePlatforms) ? json.excludePlatforms : [],
-      defineConstraints: Array.isArray(json.defineConstraints) ? json.defineConstraints : [],
-      versionDefines: Array.isArray(json.versionDefines) ? json.versionDefines : [],
-      precompiledReferences: Array.isArray(json.precompiledReferences) ? json.precompiledReferences : [],
-      overrideReferences: Boolean(json.overrideReferences),
-      autoReferenced: json.autoReferenced !== false,
-      noEngineReferences: Boolean(json.noEngineReferences),
-      allowUnsafeCode: Boolean(json.allowUnsafeCode),
-    };
-    definitions.push(item);
-    if (guid) guidToName.set(guid, json.name);
+  for (const file of [...asmdefFiles].sort()) {
+    try {
+      const json = readJson(file);
+      if (!json.name || typeof json.name !== 'string') throw new Error(`Invalid asmdef without name: ${relative(projectRoot, file)}`);
+      const guid = readMetaGuid(`${file}.meta`);
+      const item = {
+        path: relative(projectRoot, file),
+        directory: relative(projectRoot, path.dirname(file)),
+        guid,
+        name: json.name,
+        references: Array.isArray(json.references) ? json.references : [],
+        includePlatforms: Array.isArray(json.includePlatforms) ? json.includePlatforms : [],
+        excludePlatforms: Array.isArray(json.excludePlatforms) ? json.excludePlatforms : [],
+        defineConstraints: Array.isArray(json.defineConstraints) ? json.defineConstraints : [],
+        versionDefines: Array.isArray(json.versionDefines) ? json.versionDefines : [],
+        precompiledReferences: Array.isArray(json.precompiledReferences) ? json.precompiledReferences : [],
+        overrideReferences: Boolean(json.overrideReferences),
+        autoReferenced: json.autoReferenced !== false,
+        noEngineReferences: Boolean(json.noEngineReferences),
+        allowUnsafeCode: Boolean(json.allowUnsafeCode),
+      };
+      definitions.push(item);
+      if (guid) guidToName.set(guid, json.name);
+    } catch (error) { errors.push({ file: relative(projectRoot, file), message: error.message }); }
   }
 
   for (const definition of definitions) {
@@ -39,18 +42,17 @@ export function loadAsmdefs(projectRoot, asmdefFiles, asmrefFiles) {
     });
   }
 
-  const references = asmrefFiles.map((file) => {
-    const json = readJson(file);
-    let reference = String(json.reference ?? '');
-    if (reference.startsWith('GUID:')) reference = guidToName.get(reference.slice(5).toLowerCase()) ?? reference;
-    return {
-      path: relative(projectRoot, file),
-      directory: relative(projectRoot, path.dirname(file)),
-      reference,
-    };
-  });
-
-  return { definitions, references };
+  const references = [];
+  for (const file of [...asmrefFiles].sort()) {
+    try {
+      const json = readJson(file);
+      if (!json.reference || typeof json.reference !== 'string') throw new Error('Missing asmref reference');
+      let reference = json.reference;
+      if (reference.startsWith('GUID:')) reference = guidToName.get(reference.slice(5).toLowerCase()) ?? reference;
+      references.push({ path: relative(projectRoot, file), directory: relative(projectRoot, path.dirname(file)), reference });
+    } catch (error) { errors.push({ file: relative(projectRoot, file), message: error.message }); }
+  }
+  return { definitions, references, errors, complete: errors.length === 0 };
 }
 
 function platformMatches(platform, expected) {

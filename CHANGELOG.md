@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 — Scoped static scene graph
+
+- Added build-list/selected-scene graph extraction, bounded queries and a local navigable review.
+- Preserved exact Unity document IDs, prefab instances, overrides, events and source-backed lexical candidates.
+- Added conservative native binding checks, explicit coverage states, stable evidence IDs and stale-cache rejection.
+- Fixed JSON BOM handling and retained valid assemblies after individual malformed definitions.
+- Resolved exact local package sources and excluded ignored package sample folders from imported metadata.
+- Extended existing regression suites for scope, references, partial evidence, freshness and safe output ownership.
+- Added the pinned YAML dependency; no Unity process or network behavior was added to the analyzer.
+
 ## 0.1.1 — Offline evidence boundary
 
 - Made Oracle Pack discovery dynamic instead of hard-coding supported version filenames in the loader.

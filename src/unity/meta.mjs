@@ -17,3 +17,7 @@ export function extractGuidReferences(text) {
   while ((match = regex.exec(text))) found.add(match[1].toLowerCase());
   return [...found];
 }
+
+export function isBuiltinGuid(guid) {
+  return ['0000000000000000e000000000000000', '0000000000000000f000000000000000'].includes(String(guid).toLowerCase());
+}

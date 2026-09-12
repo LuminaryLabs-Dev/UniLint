@@ -90,9 +90,19 @@ U2 VERSION RESOLVED              Roslyn Worker
 
 **UniLint v0.1 does not claim U4 build prediction or U5 runtime verification.** Shaders, custom importers, opaque native binaries, actual Unity asset migration, IL2CPP and runtime behavior remain outside this release gate.
 
+## Static scene extraction in v0.2
+
+Extract all build-list scenes, including disabled entries, into a reusable graph. Follow serialized bindings, prefab overrides, lexical signal candidates and explicit unknowns with bounded queries. Generate a local scene review without opening Unity. See [commands, graph contract and limits](docs/signal-graph.md).
+
+```sh
+node src/cli.mjs graph /path/to/UnityProject --scope build-list --out /tmp/new-unilint-run
+node src/cli.mjs query /tmp/new-unilint-run --view findings --limit 20
+node src/cli.mjs report /tmp/new-unilint-run --format html --out /tmp/new-review.html
+```
+
 ## CLI
 
-Requires Node.js 20+; the core has no npm runtime dependencies.
+Requires Node.js 20+; detailed serialized extraction uses the pinned `yaml` dependency.
 
 ```bash
 npm ci

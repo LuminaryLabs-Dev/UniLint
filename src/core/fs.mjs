@@ -12,7 +12,8 @@ export function relative(root, value) {
 }
 
 export function readJson(file) {
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
+  try { return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '')); }
+  catch (error) { throw new Error(`${file}: ${error.message}`, { cause: error }); }
 }
 
 export function readText(file) {
@@ -34,6 +35,7 @@ export function walk(root, options = {}) {
     const entries = fs.readdirSync(current, { withFileTypes: true });
     for (const entry of entries) {
       if (entry.name === '.DS_Store') continue;
+      if (options.unityVisible && (entry.name.startsWith('.') || entry.name.endsWith('~'))) continue;
       const absolute = path.join(current, entry.name);
       if (entry.isDirectory()) {
         if (!ignores.has(entry.name)) {
@@ -46,4 +48,14 @@ export function walk(root, options = {}) {
     }
   }
   return results;
+}
+
+// Resolve through existing parents so output symlinks cannot bypass project-source guards.
+export function outputPathOutsideSource(projectRoot, destination) {
+  const requested=path.resolve(destination);let parent=path.dirname(requested), suffix=[path.basename(requested)];
+  while(!fs.existsSync(parent)) { suffix.unshift(path.basename(parent));const next=path.dirname(parent);if(next===parent)break;parent=next; }
+  const actual=path.join(fs.realpathSync(parent),...suffix);
+  const rel=path.relative(fs.realpathSync(projectRoot),actual);
+  if(['Assets','Packages','ProjectSettings','Library','.git'].some(d=>rel===d||rel.startsWith(d+path.sep))) throw new Error('Output must be outside Unity source/cache and Git directories.');
+  return actual;
 }

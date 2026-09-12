@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import { buildSignalGraph, writeGraph, loadGraph } from './signal-graph/index.mjs';
+import { queryGraph } from './signal-graph/query.mjs';
+import { writeReport } from './report/scene-review.mjs';
 import path from 'node:path';
 import { indexUnityProject } from './core/indexer.mjs';
 import { evaluateCompatibility } from './compat/compat.mjs';
@@ -10,7 +13,7 @@ import { searchVersions } from './compat/version-search.mjs';
 import { writeReferencePackManifest } from './reference-pack/manifest.mjs';
 
 function usage(exitCode = 0) {
-  const text = `UniLint 0.1 — offline Unity compatibility auditor\n\nUsage:\n  unilint index <project> [--format json]\n  unilint compat <project> --unity <version> [--platform windows|android|ios|webgl|linux|macos] [--backend mono|il2cpp] [--reference-pack <dir>] [--format text|json]\n  unilint versions <project> [--format text|json]\n  unilint audit <project> [--format text|json]\n  unilint oracles\n  unilint reference-pack <dir> --unity <version-line> --framework <assembly,...> --engine <assembly,...> [--auto <assembly,...>] [--complete]\n`;
+  const text = `UniLint 0.2 — offline Unity compatibility auditor\n\nUsage:\n  unilint index <project> [--format json]\n  unilint compat <project> --unity <version> [--platform windows|android|ios|webgl|linux|macos] [--backend mono|il2cpp] [--reference-pack <dir>] [--format text|json]\n  unilint versions <project> [--format text|json]\n  unilint audit <project> [--format text|json]\n  unilint graph <project> --scope build-list|enabled|selected [--scene GUID] [--scenes GUID,path] --out <new-directory>\n  unilint query <graph-directory> [--scene GUID] [--view findings|nodes|edges|scenes|files] [--node ID --direction incoming|outgoing --depth 1] [--limit 30 --offset 0] [--allow-stale]\n  unilint report <graph-directory> --format json|markdown|html [--out new-file] [--allow-stale]\n  unilint oracles\n  unilint reference-pack <dir> --unity <version-line> --framework <assembly,...> --engine <assembly,...> [--auto <assembly,...>] [--complete]\n`;
   (exitCode ? process.stderr : process.stdout).write(text);
   process.exit(exitCode);
 }
@@ -68,6 +71,23 @@ try {
     process.exit(0);
   }
 
+  if (command === 'graph') {
+    if (!options.out) throw new Error('--out requires a new, owned output directory.');
+    const graph = buildSignalGraph(project, { scope: options.scope ?? (options.scene || options.scenes ? 'selected' : 'build-list'), scenes: [...csv(options.scene), ...csv(options.scenes)] });
+    const directory = writeGraph(graph, options.out);
+    write({ directory, schemaVersion: graph.schemaVersion, scenes: graph.scenes.length, nodes: graph.nodes.length, edges: graph.edges.length, findings: graph.findings.length, seconds: graph.run.seconds, runtime: 'unverified' }, 'json');
+    process.exit(0);
+  }
+  if (command === 'query' || command === 'report') {
+    const { graph, freshness } = loadGraph(project, { allowStale: options.allowStale === true });
+    if (command === 'query') write({ ...queryGraph(graph, options), freshness }, 'json');
+    else {
+      const { text, report } = writeReport(graph, options.out, options.format ?? 'markdown');
+      if (options.out) write({ output: path.resolve(options.out), scenes: report.counts.scenes, freshness }, 'json');
+      else { if (!freshness.fresh) process.stderr.write(`Historical report: ${freshness.reason}\n`); process.stdout.write(text); }
+    }
+    process.exit(0);
+  }
   const ir = indexUnityProject(project);
   const format = options.format ?? (command === 'index' ? 'json' : 'text');
   if (command === 'index') {
