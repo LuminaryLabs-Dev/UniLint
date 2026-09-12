@@ -120,3 +120,8 @@ test('graph output cannot write through a symlink into source folders',t=>{
   const {root}=sceneFixture(t);fs.symlinkSync(path.join(root,'Assets'),path.join(root,'alias'),'dir');const g=buildSignalGraph(root);
   assert.throws(()=>writeGraph(g,path.join(root,'alias','generated')),/outside Unity/);
 });
+
+test('orphan Timeline keys remain provenance when no playable asset is assigned',t=>{
+  const {root,put}=sceneFixture(t);put('Assets/B.unity','--- !u!320 &1\nPlayableDirector:\n  m_PlayableAsset: {fileID: 0}\n  m_SceneBindings:\n  - key: {fileID: 999}\n    value: {fileID: 0}\n');
+  const g=buildSignalGraph(root),f=g.findings.find(f=>f.evidence.file==='Assets/B.unity'&&f.target?.endsWith('#999'));assert.equal(f.category,'provenance');assert.equal(f.severity,'info');
+});

@@ -64,7 +64,9 @@ export class GraphBuilder {
         e.resolution='unverified-prefab-target';this.node({id:e.to,kind:'unresolved',label:e.to,file:e.targetFile,validation:'Nested prefab target may be supplied by import; effective instance unverified'});
       } else {
         e.resolution='missing-file-id';this.node({id:e.to,kind:'unresolved',label:e.to,file:e.targetFile});
-        const provenance=/m_CorrespondingSourceObject|m_PrefabParentObject|m_PrefabInternal|m_Modifications\[\d+\](?:\.target)?$/.test(e.evidence.field??'');
+        const owner=this.documents.get(e.evidence.file)?.get(e.evidence.fileId);
+        const orphanTimeline=/^m_SceneBindings\[\d+\]\.key$/.test(e.evidence.field??'') && String(owner?.data?.m_PlayableAsset?.fileID)==='0';
+        const provenance=orphanTimeline||/m_CorrespondingSourceObject|m_PrefabParentObject|m_PrefabInternal|m_Modifications\[\d+\](?:\.target)?$/.test(e.evidence.field??'');
         this.finding('unity/reference/missing-file-id',provenance?'provenance':'structural',`Saved reference target ${e.targetFileId} is absent from ${e.targetFile}.`,e.evidence,{target:e.to,certainty:'certain',severity:provenance?'info':'warning',nextAction:'Inspect the saved binding and relevant prefab/import context; runtime failure is not established.'});
       }
     }

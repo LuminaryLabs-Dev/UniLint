@@ -59,7 +59,7 @@ Evidence points to source path, SHA-256, document start line, file ID and field 
 
 `asset:<path>#<file-id>` keeps two scene instances distinct. Their definitions are reused. Override edges retain property paths, scalar values and object references; outer overrides can supersede them. Imported/effective instance flattening is not claimed.
 
-Resolution states distinguish local/external documents, native built-ins, prefab asset handles, imported objects, unverified nested-prefab targets, unassigned values, missing IDs, missing GUIDs and ambiguous GUIDs. Provenance and override-target absences are separated from direct structural references. A missing textual target is not automatically a proven runtime failure.
+Resolution states distinguish local/external documents, native built-ins, prefab asset handles, imported objects, unverified nested-prefab targets, unassigned values, missing IDs, missing GUIDs and ambiguous GUIDs. Provenance, orphan Timeline keys on directors with no assigned playable asset, and override-target absences are separated from direct structural references. A missing textual target is not automatically a proven runtime failure.
 
 Queries default to 30 records, cap at 200, and return total/nextOffset. Neighborhood depth is 1–5 with visited-node cycle handling. Views are findings, nodes, edges, scenes and files. Optional `--kind`, `--status` and `--search` filter results. Large individual scene records may contain many dependency pointers; use findings/nodes for focused questions. Querying avoids reparsing YAML/C# but still hashes source text to check freshness.
 

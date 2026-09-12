@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — Timeline binding provenance
+
+- Classify missing Timeline binding keys as provenance when the saved PlayableDirector has no assigned playable asset. The serialized absence remains visible without implying an active broken Timeline.
+
 ## 0.2.0 — Scoped static scene graph
 
 - Added build-list/selected-scene graph extraction, bounded queries and a local navigable review.
