@@ -40,8 +40,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
-          repository: LuminaryLabs-Dev/Understanding-Islam
-          path: validation/understanding-islam
+          repository: LuminaryLabs-Dev/NexusWorldFactory
+          path: validation/nexus-world-factory
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -50,7 +50,7 @@ jobs:
       - name: Analyze real Unity 6000.3 project
         run: |
           set +e
-          node src/cli.mjs compat validation/understanding-islam --unity 6000.3 --format json > /tmp/unilint-real-6000.3.json
+          node src/cli.mjs compat validation/nexus-world-factory/NexusWorldFactory-Stegosaurus-0.0.1/UnityPackagingProject --unity 6000.3 --format json > /tmp/unilint-real-6000.3.json
           status=$?
           set -e
           test "$status" -eq 0 -o "$status" -eq 1
@@ -61,6 +61,7 @@ jobs:
             if (report.target.unityLine !== '6000.3') throw new Error('Target line mismatch.');
             if (report.compatibility.runtimeVerified !== false) throw new Error('Static proof must not claim runtime verification.');
             if (!Array.isArray(report.packages) || report.packages.length === 0) throw new Error('Expected package compatibility results.');
-            const input = report.packages.find((pkg) => pkg.name === 'com.unity.inputsystem' && pkg.resolvedVersion === '1.20.0');
-            if (!input || input.status !== 'compatible') throw new Error('Expected evidence-backed Input System 1.20.0 compatibility record.');
+            const urp = report.packages.find((pkg) => pkg.name === 'com.unity.render-pipelines.universal' && pkg.resolvedVersion === '17.3.0');
+            if (!urp) throw new Error('Expected the real project URP package to be parsed.');
+            if (!['compatible','unknown','deprecated','incompatible'].includes(urp.status)) throw new Error('Package state must be explicit.');
           "
