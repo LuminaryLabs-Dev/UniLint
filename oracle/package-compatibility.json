@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "0.1",
+  "states": ["compatible", "incompatible", "deprecated", "unknown"],
+  "records": [
+    {
+      "unity": "6000.0",
+      "package": "com.unity.inputsystem",
+      "version": "1.20.0",
+      "status": "compatible",
+      "scope": "released-package-availability",
+      "evidence": ["UNITY-6000.0-INPUTSYSTEM-1.20.0"]
+    },
+    {
+      "unity": "6000.3",
+      "package": "com.unity.inputsystem",
+      "version": "1.20.0",
+      "status": "compatible",
+      "scope": "released-package-availability",
+      "evidence": ["UNITY-6000.3-INPUTSYSTEM-1.20.0"]
+    },
+    {
+      "unity": "6000.0",
+      "package": "com.unity.timeline",
+      "version": "1.8.13",
+      "status": "compatible",
+      "scope": "released-package-availability",
+      "evidence": ["UNITY-6000.0-TIMELINE-1.8.13"]
+    },
+    {
+      "unity": "6000.3",
+      "package": "com.unity.timeline",
+      "version": "1.8.13",
+      "status": "compatible",
+      "scope": "released-package-availability",
+      "evidence": ["UNITY-6000.3-TIMELINE-1.8.13"]
+    }
+  ]
+}

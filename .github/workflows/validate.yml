@@ -33,3 +33,34 @@ jobs:
           dotnet-version: '8.0.x'
       - run: dotnet restore workers/roslyn/UniLint.Roslyn.csproj
       - run: dotnet build workers/roslyn/UniLint.Roslyn.csproj --configuration Release --no-restore
+
+  real-unity-6000-3-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: LuminaryLabs-Dev/Understanding-Islam
+          path: validation/understanding-islam
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Analyze real Unity 6000.3 project
+        run: |
+          set +e
+          node src/cli.mjs compat validation/understanding-islam --unity 6000.3 --format json > /tmp/unilint-real-6000.3.json
+          status=$?
+          set -e
+          test "$status" -eq 0 -o "$status" -eq 1
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            const report = JSON.parse(fs.readFileSync('/tmp/unilint-real-6000.3.json', 'utf8'));
+            if (!String(report.project.sourceUnity).startsWith('6000.3.')) throw new Error('Expected a real Unity 6000.3 source project.');
+            if (report.target.unityLine !== '6000.3') throw new Error('Target line mismatch.');
+            if (report.compatibility.runtimeVerified !== false) throw new Error('Static proof must not claim runtime verification.');
+            if (!Array.isArray(report.packages) || report.packages.length === 0) throw new Error('Expected package compatibility results.');
+            const input = report.packages.find((pkg) => pkg.name === 'com.unity.inputsystem' && pkg.resolvedVersion === '1.20.0');
+            if (!input || input.status !== 'compatible') throw new Error('Expected evidence-backed Input System 1.20.0 compatibility record.');
+          "
