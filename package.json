@@ -13,7 +13,8 @@
     "validate": "node scripts/validate-repo.mjs",
     "check": "npm test && npm run validate",
     "fixture:good": "node src/cli.mjs compat fixtures/good/basic-project --unity 6000.3 --format json",
-    "fixture:broken": "node src/cli.mjs compat fixtures/broken/broken-project --unity 6000.3 --format json"
+    "fixture:broken": "node src/cli.mjs compat fixtures/broken/broken-project --unity 6000.3 --format json",
+    "contract:scenes": "node src/scene-contract-cli.mjs"
   },
   "engines": {
     "node": ">=20"

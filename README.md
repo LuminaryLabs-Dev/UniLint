@@ -279,3 +279,7 @@ Copyright in individual contributions remains with the applicable authors. See [
 UniLint is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Unity Technologies.
 
 Unity and related marks belong to their respective trademark owners. UniLint does not distribute Unity binaries, Unity source code, copied Unity documentation, or Unity artwork. Developer-supplied local reference packs are not part of this repository or the UniLint MIT license grant.
+
+## Exact Unity scene and prefab contract audit
+
+The **read-only** `node src/scene-contract-cli.mjs <project> --unity 6000.3.28f1 --scenes Bootstrap,Level01_Cottage,...` checks the exact declared Editor patch, enabled scene list, required prefab source metadata and variant inheritance. See [scene contract documentation](docs/scene-contracts.md). This static check complements `index`, `graph`, `audit` and `compat`; it is **not** U3 compile proof, native Unity import, player build or runtime validation. The existing `6000.3` Oracle remains family-level evidence.
