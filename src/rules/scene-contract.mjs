@@ -22,7 +22,11 @@ export function auditSceneContract(root,{unity=null,scenes=[],prefabs=[]}={}) {
     seen.add(scene);
     if(!selected.some(s=>s.path===`Assets/Scenes/${scene}.unity`))add('REQUIRED_SCENE_NOT_ENABLED',scene,'Expected enabled scene at Assets/Scenes/'+scene+'.unity');
   }
-  if(scenes.length && selected[0]?.path!==`Assets/Scenes/${scenes[0]}.unity`)add('ENTRY_SCENE_ORDER',build.file,'First enabled scene should be '+scenes[0]);
+  // The build list is a progression contract, not merely a set of names.
+  for(let i=0;i<scenes.length;i++) {
+    const expected=`Assets/Scenes/${scenes[i]}.unity`;
+    if(selected[i]?.path!==expected) add('REQUIRED_SCENE_ORDER',build.file,`Enabled index ${i} expected ${expected}, found ${selected[i]?.path??'(none)'}`);
+  }
   const guidIndex=new Map(),serial=[];
   function walk(dir) {
     if (!fs.existsSync(dir))return;
